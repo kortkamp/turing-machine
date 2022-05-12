@@ -1,2 +1,2 @@
 # turing-machine
-Turing machine simulator write in Javascript
+Turing machine simulator written in Javascript
