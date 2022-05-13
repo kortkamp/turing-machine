@@ -20,18 +20,18 @@ export class TuringMachine {
   }
   private write(symbol: string) {
     if (symbol !== '*') {
-      this.tape[this.cpu.tapePosition] = symbol;
+      this.tape[this.cpu.tapePosition] = symbol === '_' ? ' ' : symbol;
     }
   }
   private moveRight() {
-    if (this.cpu.tapePosition === this.tape.length) {
-      this.tape.push();
-    }
     this.cpu.tapePosition += 1;
+    if (this.cpu.tapePosition >= this.tape.length) {
+      this.tape.push(' ');
+    }
   }
   private moveLeft() {
-    if (this.cpu.tapePosition === 0) {
-      this.tape.unshift();
+    if (this.cpu.tapePosition <= 0) {
+      this.tape.unshift(' ');
     } else {
       this.cpu.tapePosition -= 1;
     }
@@ -57,6 +57,9 @@ export class TuringMachine {
     );
     if (!matchingRule) {
       matchingRule = this.rules.find(rule => {
+        const stateMatches = rule.state === state || state === '*';
+        const symbolMatches =
+          rule.symbol === symbol || symbol === '*' || rule.symbol === '*';
         return (
           (rule.state === state && (symbol === '*' || rule.symbol === '*')) ||
           (rule.state === '*' && rule.symbol === symbol)
@@ -79,7 +82,7 @@ export class TuringMachine {
     this.rules = ruleLines.map((line, index) => {
       const ruleLine = line.split(' ');
 
-      if (ruleLine.length !== 5) {
+      if (ruleLine.length < 5) {
         throw new Error(`invalid rule at line ${index}:${ruleLine}`);
       }
       return {
@@ -106,6 +109,8 @@ export class TuringMachine {
     this.cpu.symbol = this.tape[this.cpu.tapePosition];
     // console.log(this.cpu);
     // console.log(this.tape);
+    if (this.cpu.symbol === ' ') this.cpu.symbol = '_';
+    if (!this.cpu.symbol) throw new Error('symbol undefined');
     const rule = this.findRule(this.cpu.state, this.cpu.symbol);
     // console.log(rule);
     this.cpu.state = rule.newState;
@@ -114,7 +119,7 @@ export class TuringMachine {
   }
 
   public run(): string {
-    while (this.cpu.state !== 'halt') {
+    while (!this.cpu.state.startsWith('halt')) {
       this.step();
     }
     return this.tape.join('');
