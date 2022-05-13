@@ -1,17 +1,44 @@
 /* eslint-disable no-multi-str */
+import fs from 'fs';
+
 import { TuringMachine } from './Machine';
 
-const turingMachine = new TuringMachine();
+function readFile(path: string) {
+  const content = fs.readFileSync(`./data/${path}`, 'utf8');
+  return content;
+}
 
-turingMachine.loadTape('A/B/C/D@');
-turingMachine.loadRules(
-  '* @ . * halt\n' +
-    '0 * * r 0\n' +
-    '0 / x r y\n' +
-    'y * * r y\n' +
-    'y / y r 0',
-);
-turingMachine.reset();
+function exec(turingMachine: TuringMachine, ruleFile: string, input: string) {
+  const rules = readFile(ruleFile);
+  turingMachine.reset();
+  turingMachine.loadRules(rules);
+  turingMachine.loadTape(input);
+  try {
+    return turingMachine.run();
+  } catch (erro) {
+    return 'ERR';
+  }
+}
 
-const value = turingMachine.run();
-console.log(value);
+function main() {
+  const dataFile = process.argv[2];
+  if (!dataFile) {
+    console.error('Error:You must provide the data File');
+    process.exit(-1);
+  }
+
+  const turingMachine = new TuringMachine();
+
+  const dataFileContent = readFile(dataFile);
+  const batches = dataFileContent.split(/\r\n|\n/);
+  batches.forEach(batch => {
+    if (batch) {
+      const [ruleFile, input] = batch.split(',');
+
+      const output = exec(turingMachine, ruleFile, input);
+      console.log([ruleFile, input, output.trim()].join(','));
+    }
+  });
+}
+
+main();
